@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm ci && npm run build"
   publish = "dist"
 
 [[redirects]]
@@ -31,3 +31,7 @@
   for = "/*.tsx"
   [headers.values]
     Content-Type = "text/javascript"
+
+[build.environment]
+  NODE_VERSION = "20.11.1"
+  NPM_VERSION = "10.2.4"
