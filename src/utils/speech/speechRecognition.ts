@@ -9,7 +9,7 @@ export function createSpeechRecognitionError(message: string, originalError?: an
 
 let recognition: SpeechRecognition | null = null;
 
-function initializeRecognition() {
+function initializeRecognition(): SpeechRecognition {
   if (!recognition) {
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       throw createSpeechRecognitionError('Speech recognition is not supported in this browser');
@@ -29,91 +29,49 @@ function initializeRecognition() {
 let isListening = false;
 let onResultCallback: ((event: SpeechRecognitionEvent) => void) | null = null;
 let onEndCallback: (() => void) | null = null;
-let noSpeechTimeout: NodeJS.Timeout | null = null;
-
-const TIMEOUT_DURATION = 5000; // 5 seconds timeout for no speech
 
 export async function startSpeechRecognition(
   onResult?: (event: SpeechRecognitionEvent) => void,
   onEnd?: () => void
 ): Promise<SpeechRecognition> {
   try {
-    const recognitionInstance = initializeRecognition();
-
     if (isListening) {
-      return recognitionInstance;
+      stopSpeechRecognition();
     }
 
-    // Reset callbacks
+    const recognitionInstance = initializeRecognition();
     onResultCallback = onResult || null;
     onEndCallback = onEnd || null;
 
-    // Setup event handlers
-    recognitionInstance.onstart = () => {
-      console.log('Recognition started');
-      isListening = true;
-    };
-
     recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-      if (noSpeechTimeout) {
-        clearTimeout(noSpeechTimeout);
-        noSpeechTimeout = null;
-      }
-
-      try {
-        onResultCallback?.(event);
-      } catch (error) {
-        console.error('Error processing recognition result:', error);
-        stopSpeechRecognition();
-      }
-    };
-
-    recognitionInstance.onerror = (event: SpeechRecognitionError) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        throw createSpeechRecognitionError('Microphone access denied');
-      }
-      stopSpeechRecognition();
+      onResultCallback?.(event);
     };
 
     recognitionInstance.onend = () => {
-      console.log('Recognition ended');
       isListening = false;
       onEndCallback?.();
     };
 
-    // Request microphone permission
-    await navigator.mediaDevices.getUserMedia({ audio: true });
+    recognitionInstance.onerror = (event: SpeechRecognitionError) => {
+      console.error('Speech recognition error:', event.error);
+      isListening = false;
+      onEndCallback?.();
+    };
 
-    // Start recognition
     recognitionInstance.start();
-
-    // Set timeout for no speech
-    noSpeechTimeout = setTimeout(() => {
-      if (isListening) {
-        console.log('No speech detected, stopping recognition');
-        stopSpeechRecognition();
-      }
-    }, TIMEOUT_DURATION);
-
+    isListening = true;
     return recognitionInstance;
   } catch (error) {
-    console.error('Error starting speech recognition:', error);
-    throw createSpeechRecognitionError(
-      'Failed to start speech recognition',
-      error
-    );
+    throw createSpeechRecognitionError('Failed to start speech recognition', error);
   }
 }
 
 export function stopSpeechRecognition(): void {
   if (recognition && isListening) {
-    if (noSpeechTimeout) {
-      clearTimeout(noSpeechTimeout);
-      noSpeechTimeout = null;
-    }
     recognition.stop();
     isListening = false;
+    onResultCallback = null;
+    onEndCallback = null;
   }
 }
 

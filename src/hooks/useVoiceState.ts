@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { startSpeechRecognition, stopSpeechRecognition } from '../utils/speech/speechRecognition';
 import { speak, cancelSpeech, isSpeechActive } from '../utils/speech/speechSynthesis';
-import type { SpeechError } from '../utils/speech/types';
+import type { SpeechError, SpeechRecognitionEvent, SpeechRecognitionResult } from '../utils/speech/types';
 
 interface UseVoiceStateProps {
   onSpeechResult?: (text: string) => void;
@@ -71,12 +71,13 @@ export function useVoiceState(props?: UseVoiceStateProps) {
       cancelSpeech();
       
       const recognition = await startSpeechRecognition(
-        (event) => {
-          const transcript = Array.from(event.results)
-            .map((result: any) => result[0].transcript)
+        (event: SpeechRecognitionEvent) => {
+          const results = Array.from(event.results) as SpeechRecognitionResult[];
+          const transcript = results
+            .map(result => result[0].transcript)
             .join('');
           
-          if (event.results[0].isFinal) {
+          if (results[0] && results[0].isFinal) {
             onSpeechResult?.(transcript);
             handleStopListening();
           }
