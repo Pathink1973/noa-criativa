@@ -1,5 +1,5 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   publish = "dist"
 
 [[redirects]]
@@ -33,5 +33,5 @@
     Content-Type = "text/javascript"
 
 [build.environment]
-  NODE_VERSION = "20.11.1"
-  NPM_VERSION = "10.2.4"
+  NODE_VERSION = "18.17.0"
+  NPM_VERSION = "9.6.7"
