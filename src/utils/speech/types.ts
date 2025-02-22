@@ -21,25 +21,26 @@ export interface SpeechState {
   error: string | null;
 }
 
-export interface SpeechRecognitionResult extends Array<SpeechRecognitionAlternative> {
-  isFinal: boolean;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
 export interface SpeechRecognitionAlternative {
   transcript: string;
   confidence: number;
 }
 
-export interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
+export interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
 }
 
 export interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
   length: number;
   item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
+}
+
+export interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
 }
 
 export interface SpeechRecognitionError extends Event {
@@ -51,17 +52,12 @@ export interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionError) => void;
-  onend: () => void;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionError) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
+// Note: Global declarations are in src/types/global.d.ts

@@ -1,6 +1,12 @@
+import type { SpeechRecognition } from '../utils/speech/types';
+
 interface Window {
-  SpeechRecognition: any;
-  webkitSpeechRecognition: any;
+  SpeechRecognition: {
+    new(): SpeechRecognition;
+  };
+  webkitSpeechRecognition: {
+    new(): SpeechRecognition;
+  };
   chatbase: any;
 }
 
@@ -20,7 +26,3 @@ interface SpeechRecognitionError extends Event {
   error: string;
   message: string;
 }
-
-declare const webkitSpeechRecognition: {
-  new(): SpeechRecognition;
-};

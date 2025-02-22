@@ -1,4 +1,4 @@
-import { SpeechError, SpeechRecognition, SpeechRecognitionError, SpeechRecognitionEvent } from './types';
+import { SpeechError } from './types';
 
 export function createSpeechRecognitionError(message: string, originalError?: any): SpeechError {
   const error = new Error(message) as SpeechError;
@@ -10,20 +10,19 @@ export function createSpeechRecognitionError(message: string, originalError?: an
 let recognition: SpeechRecognition | null = null;
 
 function initializeRecognition(): SpeechRecognition {
-  if (!recognition) {
-    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      throw createSpeechRecognitionError('Speech recognition is not supported in this browser');
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    
-    // Configure recognition
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'pt-PT';
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    throw createSpeechRecognitionError('Speech recognition is not supported in this browser');
   }
-  return recognition;
+
+  const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const newRecognition = new SpeechRecognitionConstructor();
+
+  // Configure recognition
+  newRecognition.continuous = true;
+  newRecognition.interimResults = true;
+  newRecognition.lang = 'pt-PT';
+
+  return newRecognition;
 }
 
 let isListening = false;
@@ -35,32 +34,33 @@ export async function startSpeechRecognition(
   onEnd?: () => void
 ): Promise<SpeechRecognition> {
   try {
-    if (isListening) {
-      stopSpeechRecognition();
+    if (isListening && recognition) {
+      recognition.stop();
+      isListening = false;
     }
 
-    const recognitionInstance = initializeRecognition();
+    recognition = initializeRecognition();
     onResultCallback = onResult || null;
     onEndCallback = onEnd || null;
 
-    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       onResultCallback?.(event);
     };
 
-    recognitionInstance.onend = () => {
+    recognition.onend = () => {
       isListening = false;
       onEndCallback?.();
     };
 
-    recognitionInstance.onerror = (event: SpeechRecognitionError) => {
+    recognition.onerror = (event: SpeechRecognitionError) => {
       console.error('Speech recognition error:', event.error);
       isListening = false;
       onEndCallback?.();
     };
 
-    recognitionInstance.start();
+    recognition.start();
     isListening = true;
-    return recognitionInstance;
+    return recognition;
   } catch (error) {
     throw createSpeechRecognitionError('Failed to start speech recognition', error);
   }
